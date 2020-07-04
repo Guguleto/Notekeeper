@@ -57,5 +57,11 @@ public class NoteCreationTest {
 
         pressBack();
 
+        int noteIndex = sDataManager.getNotes().size() -1;
+        NoteInfo note = sDataManager.getNotes().get(noteIndex);
+        assertEquals(course, note.getCourse());
+        assertEquals(noteTitle, note.getTitle());
+        assertEquals(noteText, note.getText());
+
     }
 }
