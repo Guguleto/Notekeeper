@@ -1,5 +1,6 @@
 package com.example.notekeeper;
 
+import android.content.Intent;
 import android.os.Bundle;
 import android.view.MenuItem;
 import android.view.View;
@@ -11,6 +12,7 @@ import com.google.android.material.navigation.NavigationView;
 
 import androidx.annotation.NonNull;
 import androidx.appcompat.app.ActionBarDrawerToggle;
+import androidx.core.view.GravityCompat;
 import androidx.navigation.NavController;
 import androidx.navigation.Navigation;
 import androidx.navigation.ui.AppBarConfiguration;
@@ -23,7 +25,7 @@ import androidx.recyclerview.widget.RecyclerView;
 
 import java.util.List;
 
-public class MainActivity extends AppCompatActivity {
+public class MainActivity extends AppCompatActivity implements onNavigationItemSelected {
 
     private NoteRecyclerAdapter mNoteRecyclerAdapter;
     private ActionBarDrawerToggle toggle;
@@ -39,6 +41,8 @@ public class MainActivity extends AppCompatActivity {
         fab.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
+                startActivity(new Intent( MainActivity.this, NoteActivity.class ));
+
                 Snackbar.make(view, "Replace with your own action", Snackbar.LENGTH_LONG)
                         .setAction("Action", null).show();
             }
@@ -63,7 +67,7 @@ public class MainActivity extends AppCompatActivity {
 
     private void initializeDisplayContent() {
 
-        final RecyclerView recyclerNotes = (RecyclerView) findViewById(R.id.list_items);
+        final RecyclerView recyclerNotes = (RecyclerView) findViewById(R.id.list_notes);
         final LinearLayoutManager notesLayoutManager = new LinearLayoutManager(this);
         recyclerNotes.setLayoutManager(notesLayoutManager);
 
@@ -73,12 +77,47 @@ public class MainActivity extends AppCompatActivity {
     }
 
     @Override
+    public void onBackPressed() {
+        DrawerLayout drawer = (DrawerLayout) findViewById(R.id.drawer_layout);
+        if(drawer.isDrawerOpen(GravityCompat.START)){
+            drawer.closeDrawer(GravityCompat.START);
+        }
+        super.onBackPressed();
+    }
+
+    @Override
     public boolean onCreateOptionsMenu(Menu menu) {
         // Inflate the menu; this adds items to the action bar if it is present.
         getMenuInflater().inflate(R.menu.main, menu);
         return true;
     }
+    @SuppressWarnings("StatementWithEmptyBody")
+    @Override
+    public boolean oNavigationItemSelected(MenuItem item){
+//        handle navigation view item clicks here
+        int id = item.getItemId();
 
+        if(id == R.id.nav_notes){
+            handleSelection("Notes");
+        }else if(id == R.id.nav_courses){
+            handleSelection("Courses");
+        }else if(id == R.id.action_share){
+            handleSelection("Don't you think you've shared enough");
+        }else if(id == R.id.action_send){
+            handleSelection("Send");
+        }
+        DrawerLayout drawer;
+        drawer = (DrawerLayout) findViewById(R.id.drawer_layout);
+        drawer.closeDrawer(GravityCompat.START);
+        return true;
+
+
+    }
+
+    private void handleSelection(String message) {
+        View view = findViewById(R.id.list_notes);
+        Snackbar.make(view, message, Snackbar.LENGTH_LONG).show();
+    }
 
 
 }
