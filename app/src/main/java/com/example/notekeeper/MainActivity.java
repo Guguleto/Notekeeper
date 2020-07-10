@@ -13,23 +13,26 @@ import com.google.android.material.navigation.NavigationView;
 import androidx.annotation.NonNull;
 import androidx.appcompat.app.ActionBarDrawerToggle;
 import androidx.core.view.GravityCompat;
-import androidx.navigation.NavController;
-import androidx.navigation.Navigation;
 import androidx.navigation.ui.AppBarConfiguration;
-import androidx.navigation.ui.NavigationUI;
 import androidx.drawerlayout.widget.DrawerLayout;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.appcompat.widget.Toolbar;
+import androidx.recyclerview.widget.GridLayoutManager;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
 import java.util.List;
 
-public class MainActivity extends AppCompatActivity implements onNavigationItemSelected {
+public class MainActivity extends AppCompatActivity
+        implements NavigationView.OnNavigationItemSelectedListener{
 
     private NoteRecyclerAdapter mNoteRecyclerAdapter;
     private ActionBarDrawerToggle toggle;
     private AppBarConfiguration mAppBarConfiguration;
+    private RecyclerView mRecyclerItems;
+    private LinearLayoutManager mNotesLayoutManager;
+    private CourseRecyclerAdapter mCourseRecyclerAdapter;
+    private GridLayoutManager mCourseLayoutManager;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -57,6 +60,9 @@ public class MainActivity extends AppCompatActivity implements onNavigationItemS
         getSupportActionBar().setDisplayHomeAsUpEnabled(true);
         toggle.syncState();
 
+        NavigationView navigationView = findViewById(R.id.nav_view);
+        navigationView.setNavigationItemSelectedListener(this);
+
         initializeDisplayContent();
     }
     @Override
@@ -67,13 +73,40 @@ public class MainActivity extends AppCompatActivity implements onNavigationItemS
 
     private void initializeDisplayContent() {
 
-        final RecyclerView recyclerNotes = (RecyclerView) findViewById(R.id.list_notes);
-        final LinearLayoutManager notesLayoutManager = new LinearLayoutManager(this);
-        recyclerNotes.setLayoutManager(notesLayoutManager);
+        mRecyclerItems = (RecyclerView) findViewById(R.id.list_notes);
+        mNotesLayoutManager = new LinearLayoutManager(this);
+        mCourseLayoutManager = new GridLayoutManager(this,
+                getResources().getInteger(R.integer.course_grid_span));
 
         List<NoteInfo> notes = DataManager.getInstance().getNotes();
         mNoteRecyclerAdapter = new NoteRecyclerAdapter(this, notes);
-        recyclerNotes.setAdapter(mNoteRecyclerAdapter);
+
+        List<CourseInfo> course = DataManager.getInstance().getCourses();
+        mCourseRecyclerAdapter = new CourseRecyclerAdapter(this,course);
+
+        displayNotes();
+
+    }
+
+    private void displayNotes() {
+        mRecyclerItems.setAdapter(mNoteRecyclerAdapter);
+        mRecyclerItems.setLayoutManager(mNotesLayoutManager);
+
+        selectNavigationMenuItem(R.id.nav_notes);
+
+    }
+
+    private void selectNavigationMenuItem(int id) {
+        NavigationView navigationView = (NavigationView) findViewById(R.id.nav_view);
+        Menu menu = navigationView.getMenu();
+        menu.findItem(id).setChecked(true);
+    }
+
+    private void displayCourses(){
+        mRecyclerItems.setLayoutManager(mCourseLayoutManager);
+        mRecyclerItems.setAdapter(mCourseRecyclerAdapter);
+
+        selectNavigationMenuItem(R.id.nav_courses);
     }
 
     @Override
@@ -91,34 +124,48 @@ public class MainActivity extends AppCompatActivity implements onNavigationItemS
         getMenuInflater().inflate(R.menu.main, menu);
         return true;
     }
+
+    @Override
+    public boolean onOptionsItemSelected(@NonNull MenuItem item) {
+//        Handle action bar item click her. The acton bar will
+//        automatically handle clicks on the Home/Up button, so long
+//        as you specify a parent activity.
+        int id = item.getItemId();
+
+//        noinspection SimplefiableIfStatement
+        if (id == R.id.action_settings){
+            startActivity(new Intent(this, SettingsActivity.class));
+            return true;
+        }
+
+        return super.onOptionsItemSelected(item);
+    }
+
     @SuppressWarnings("StatementWithEmptyBody")
     @Override
-    public boolean oNavigationItemSelected(MenuItem item){
-//        handle navigation view item clicks here
+    public boolean onNavigationItemSelected(@NonNull MenuItem item) {
+        //        handle navigation view item clicks here
         int id = item.getItemId();
 
         if(id == R.id.nav_notes){
-            handleSelection("Notes");
+            displayNotes();
         }else if(id == R.id.nav_courses){
-            handleSelection("Courses");
+            displayCourses();
         }else if(id == R.id.action_share){
-            handleSelection("Don't you think you've shared enough");
+            handleSelection(R.string.nav_share_message);
         }else if(id == R.id.action_send){
-            handleSelection("Send");
+            handleSelection(R.string.nav_send_message);
         }
         DrawerLayout drawer;
         drawer = (DrawerLayout) findViewById(R.id.drawer_layout);
         drawer.closeDrawer(GravityCompat.START);
         return true;
-
-
     }
 
-    private void handleSelection(String message) {
-        View view = findViewById(R.id.list_notes);
-        Snackbar.make(view, message, Snackbar.LENGTH_LONG).show();
+    private void handleSelection(int message_id) {
+            View view = findViewById(R.id.list_notes);
+            Snackbar.make(view, message_id, Snackbar.LENGTH_LONG).show();
+
     }
-
-
 }
 
