@@ -50,4 +50,17 @@
     <string name="attachment_summary_on">Automatically download attachments for incoming emails
     </string>
     <string name="attachment_summary_off">Only download attachments when manually requested</string>
+    <string name="general">General</string>
+    <string name="gugu">Gugu</string>
+    <string name="notification_header">Notification</string>
+    <string name="display_name">Display name</string>
+    <string name="pref_default_email_address">yourname@yourhost.com</string>
+    <string name="pref_title_email_address">Email address</string>
+    <string name="pref_title_favourite_social">Favorite social network</string>
+    <string name="title_add_friends_to_">Add friends to message</string>
+    <string name="h">http://plus.google.com</string>
+    <string name="pref_default_display_name">Your name</string>
+    <string name="pref_default_favorite_social">http://plus.google.com</string>
+    <string name="user_display_name">user_display_name</string>
+
 </resources>
