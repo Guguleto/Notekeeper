@@ -99,14 +99,14 @@ public class MainActivity extends AppCompatActivity
 
         SharedPreferences pref = PreferenceManager.getDefaultSharedPreferences(this);
         String userName = pref.getString("user_display_name", "");
-        String emailAddress = pref.getString("user_email.address", "");
+        String emailAddress = pref.getString("user_email_address", "");
 
         textUserName.setText(userName);
         textEmailAddress.setText(emailAddress);
     }
 
     private void initializeDisplayContent() {
-
+        DataManager.loadFromDatabase(mDbOpenHelper);
         mRecyclerItems = (RecyclerView) findViewById(R.id.list_notes);
         mNotesLayoutManager = new LinearLayoutManager(this);
         mCourseLayoutManager = new GridLayoutManager(this,
@@ -126,7 +126,7 @@ public class MainActivity extends AppCompatActivity
         mRecyclerItems.setAdapter(mNoteRecyclerAdapter);
         mRecyclerItems.setLayoutManager(mNotesLayoutManager);
 
-        SQLiteDatabase db = mDbOpenHelper.getReadableDatabase();
+
         selectNavigationMenuItem(R.id.nav_notes);
 
     }
