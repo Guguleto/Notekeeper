@@ -139,7 +139,7 @@ public class NoteActivity extends AppCompatActivity {
         if (mIsNewNote) {
             createNewNote();
         }
-        Log.i(TAG, "mNotePosition:" + mNoteId);
+        Log.i(TAG, "mNoteId: " + mNoteId);
 //        mNote = DataManager.getInstance().getNotes().get(mNoteId);
 
 

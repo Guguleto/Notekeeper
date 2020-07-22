@@ -7,6 +7,9 @@ public final class NoteInfo implements Parcelable{
     private CourseInfo mCourse;
     private String mTitle;
     private String mText;
+    private int id;
+    private int mId;
+
 
     public NoteInfo(CourseInfo course, String title, String text) {
         mCourse = course;
@@ -21,7 +24,7 @@ public final class NoteInfo implements Parcelable{
     }
 
     public NoteInfo(int id, CourseInfo noteCourse, String noteTitle, String noteText) {
-
+        mId = id;
     }
 
     public CourseInfo getCourse() {
@@ -82,10 +85,7 @@ public final class NoteInfo implements Parcelable{
         parcel.writeParcelable(mCourse, 0);
         parcel.writeString(mTitle);
         parcel.writeString(mText);
-
     }
-
-
     public static final Creator<NoteInfo> CREATOR= new Creator<NoteInfo>(){
         @Override
         public NoteInfo createFromParcel(Parcel parcel) {
@@ -97,4 +97,10 @@ public final class NoteInfo implements Parcelable{
             return new NoteInfo[size];
         }
     };
+    public int getId(){
+
+        return mId;
+    }
+
+
 }
