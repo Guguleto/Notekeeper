@@ -20,6 +20,10 @@ public final class NoteInfo implements Parcelable{
         mText= parcel.readString();
     }
 
+    public NoteInfo(int id, CourseInfo noteCourse, String noteTitle, String noteText) {
+
+    }
+
     public CourseInfo getCourse() {
         return mCourse;
     }
@@ -82,7 +86,7 @@ public final class NoteInfo implements Parcelable{
     }
 
 
-    public static final Parcelable.Creator<NoteInfo> CREATOR= new Parcelable.Creator<NoteInfo>(){
+    public static final Creator<NoteInfo> CREATOR= new Creator<NoteInfo>(){
         @Override
         public NoteInfo createFromParcel(Parcel parcel) {
             return new NoteInfo(parcel);
