@@ -12,8 +12,11 @@ import androidx.recyclerview.widget.RecyclerView;
 
 import com.example.notekeeper.NoteKeeperDatabaseContract.CourseInfoEntry;
 import com.example.notekeeper.NoteKeeperDatabaseContract.NoteInfoEntry;
+import com.example.notekeeper.NoteKeeperProviderContract.Courses;
+import com.example.notekeeper.NoteKeeperProviderContract.Notes;
 
 public class NoteRecyclerAdapter extends RecyclerView.Adapter<NoteRecyclerAdapter.ViewHolder> {
+
     private final Context mContext;
     private Cursor mCursor;
     private final LayoutInflater mLayoutInflater;
@@ -29,15 +32,15 @@ public class NoteRecyclerAdapter extends RecyclerView.Adapter<NoteRecyclerAdapte
     }
 
     private void populateColumnPositions() {
-        if(mCursor==null)
-        return;
-//        get column indexes from cursor
-        mCoursePos = mCursor.getColumnIndex(CourseInfoEntry.COLUMN_COURSE_TITLE);
-        mNoteTitlePos = mCursor.getColumnIndex(NoteInfoEntry.COLUMN_NOTE_TITLE);
-        mIdPos = mCursor.getColumnIndex(NoteInfoEntry._ID);
-
+        if(mCursor == null)
+            return;
+        // Get column indexes from mCursor
+        mCoursePos = mCursor.getColumnIndex(Courses.COLUMN_COURSE_TITLE);
+        mNoteTitlePos = mCursor.getColumnIndex(Notes.COLUMN_NOTE_TITLE);
+        mIdPos = mCursor.getColumnIndex(Notes._ID);
     }
-    void changeCursor(Cursor cursor){
+
+    public void changeCursor(Cursor cursor) {
 
         mCursor = cursor;
         populateColumnPositions();
@@ -46,7 +49,7 @@ public class NoteRecyclerAdapter extends RecyclerView.Adapter<NoteRecyclerAdapte
 
     @Override
     public ViewHolder onCreateViewHolder(ViewGroup parent, int viewType) {
-        View itemView = mLayoutInflater.inflate(R.layout.item_note_list, parent,false);
+        View itemView = mLayoutInflater.inflate(R.layout.item_note_list, parent, false);
         return new ViewHolder(itemView);
     }
 
@@ -60,16 +63,13 @@ public class NoteRecyclerAdapter extends RecyclerView.Adapter<NoteRecyclerAdapte
         holder.mTextCourse.setText(course);
         holder.mTextTitle.setText(noteTitle);
         holder.mId = id;
-
     }
-
     @Override
     public int getItemCount() {
-
-        return mCursor==null ? 0: mCursor.getCount();
+        return mCursor == null ? 0 : mCursor.getCount();
     }
 
-    public class ViewHolder extends RecyclerView.ViewHolder{
+    public class ViewHolder extends RecyclerView.ViewHolder {
 
         public final TextView mTextCourse;
         public final TextView mTextTitle;
@@ -86,10 +86,8 @@ public class NoteRecyclerAdapter extends RecyclerView.Adapter<NoteRecyclerAdapte
                     Intent intent = new Intent(mContext, NoteActivity.class);
                     intent.putExtra(NoteActivity.NOTE_ID, mId);
                     mContext.startActivity(intent);
-
                 }
             });
-
         }
     }
 }

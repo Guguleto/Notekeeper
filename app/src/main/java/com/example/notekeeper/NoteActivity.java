@@ -1,5 +1,7 @@
 package com.example.notekeeper;
 
+import android.app.PendingIntent;
+import android.content.ContentUris;
 import android.content.ContentValues;
 import android.content.Intent;
 import android.database.Cursor;
@@ -26,6 +28,7 @@ import androidx.loader.content.CursorLoader;
 import com.example.notekeeper.NoteKeeperDatabaseContract.CourseInfoEntry;
 import com.example.notekeeper.NoteKeeperDatabaseContract.NoteInfoEntry;
 import com.example.notekeeper.NoteKeeperProviderContract.Courses;
+import com.example.notekeeper.NoteKeeperProviderContract.Notes;
 
 
 public class NoteActivity extends AppCompatActivity
@@ -58,6 +61,7 @@ public class NoteActivity extends AppCompatActivity
     private SimpleCursorAdapter mAdapterCourse;
     private boolean mCoursesQueryFinished;
     private boolean mNotesQueryFinished;
+    private Uri mNoteUri;
 
 
     @Override
@@ -163,6 +167,7 @@ public class NoteActivity extends AppCompatActivity
 
 
         int courseIndex = getIndexOfCourseId(courseId);
+
         mSpinnerCourses.setSelection(courseIndex);
         mTextNoteTitle.setText(noteTitle);
         mTextNoteText.setText(noteText);
@@ -170,13 +175,13 @@ public class NoteActivity extends AppCompatActivity
 
     private int getIndexOfCourseId(String courseId) {
         Cursor cursor = mAdapterCourse.getCursor();
-        int courseIdPos = cursor.getColumnIndex(CourseInfoEntry.COLUMN_COURSE_ID);
+        int courseIdPos = cursor.getColumnIndex(Courses.COLUMN_COURSE_ID);
         int courseRowIndex = 0;
 
         boolean more = cursor.moveToFirst();
-        while (more) {
+        while(more) {
             String cursorCourseId = cursor.getString(courseIdPos);
-            if (courseId.equals(cursorCourseId))
+            if(courseId.equals(cursorCourseId))
                 break;
 
             courseRowIndex++;
@@ -200,19 +205,11 @@ public class NoteActivity extends AppCompatActivity
 
     private void createNewNote() {
         final ContentValues values = new ContentValues();
-        values.put(NoteInfoEntry.COLUMN_COURSE_ID, "");
-        values.put(NoteInfoEntry.COLUMN_NOTE_TITLE, "");
-        values.put(NoteInfoEntry.COLUMN_NOTE_TEXT, "");
+        values.put(Notes.COLUMN_COURSE_ID, "");
+        values.put(Notes.COLUMN_NOTE_TITLE, "");
+        values.put(Notes.COLUMN_NOTE_TEXT, "");
 
-        AsyncTask task = new AsyncTask() {
-            @Override
-            protected Object doInBackground(Object[] objects) {
-                SQLiteDatabase db = mDbOpenHelper.getWritableDatabase();
-                mNoteId = (int) db.insert(NoteInfoEntry.TABLE_NAME, null, values);
-                return null;
-            }
-        };
-        task.execute();
+        mNoteUri = getContentResolver().insert(Notes.CONTENT_URI, values);
     }
 
     @Override
@@ -238,8 +235,17 @@ public class NoteActivity extends AppCompatActivity
             finish();
         } else if (id == R.id.action_next) {
             moveNext();
+        }else if (id == R.id.action_set_reminder){
+            new NoteReminderNotification();
         }
+
         return super.onOptionsItemSelected(item);
+    }
+
+    private void showReminderNotification() {
+
+
+
     }
 
     @Override
@@ -278,15 +284,12 @@ public class NoteActivity extends AppCompatActivity
         Log.d(TAG, "onPause");
     }
 
-    private void deleteNoteFromDatabase() {
-        final String selection = NoteInfoEntry._ID + " = ?";
-        final String [] selectionArgs = {Integer.toString(mNoteId)};
+    private void deleteNoteFromDatabase(){
 
         AsyncTask task = new AsyncTask() {
             @Override
-            protected Object doInBackground(Object[] objects) {
-                SQLiteDatabase db = mDbOpenHelper.getWritableDatabase();
-                db.delete(NoteInfoEntry.TABLE_NAME, selection, selectionArgs);
+            protected Object doInBackground(Object[] params) {
+                getContentResolver().delete(mNoteUri, null, null);
                 return null;
             }
         };
@@ -321,29 +324,18 @@ public class NoteActivity extends AppCompatActivity
         int selectedPosition = mSpinnerCourses.getSelectedItemPosition();
         Cursor cursor = mAdapterCourse.getCursor();
         cursor.moveToPosition(selectedPosition);
-        int courseIdPos = cursor.getColumnIndex(CourseInfoEntry.COLUMN_COURSE_ID);
+        int courseIdPos = cursor.getColumnIndex(Courses.COLUMN_COURSE_ID);
         String courseId = cursor.getString(courseIdPos);
         return courseId;
     }
 
     private void saveNoteToDatabase(String courseId, String noteTitle, String noteText){
-        final String selection = NoteInfoEntry._ID + " = ? ";
-        final String [] selectionArgs = {Integer.toString(mNoteId)};
+        ContentValues values = new ContentValues();
+        values.put(Notes.COLUMN_COURSE_ID, courseId);
+        values.put(Notes.COLUMN_NOTE_TITLE, noteTitle);
+        values.put(Notes.COLUMN_NOTE_TEXT, noteText);
 
-        final ContentValues values = new ContentValues();
-         values.put(NoteInfoEntry.COLUMN_COURSE_ID, courseId);
-         values.put(NoteInfoEntry.COLUMN_NOTE_TITLE, noteTitle);
-         values.put(NoteInfoEntry.COLUMN_NOTE_TEXT, noteText);
-
-         AsyncTask task = new AsyncTask() {
-             @Override
-             protected Object doInBackground(Object[] objects) {
-                 SQLiteDatabase db = mDbOpenHelper.getWritableDatabase();
-                 db.update(NoteInfoEntry.TABLE_NAME, values, selection, selectionArgs);
-                 return null;
-             }
-         };
-         task.execute();
+        getContentResolver().update(mNoteUri, values, null, null);
 
     }
 
@@ -385,27 +377,15 @@ public class NoteActivity extends AppCompatActivity
 
     private CursorLoader createLoaderNotes() {
         mNotesQueryFinished = false;
-        return new CursorLoader(this){
-            @Override
-            public Cursor loadInBackground() {
-
-                SQLiteDatabase db = mDbOpenHelper.getReadableDatabase();
-
-
-
-                String selection = NoteInfoEntry._ID + " = ?";
-                String[] selectionArgs = {Integer.toString(mNoteId)};
-
-                String[] noteColumns = {
-                        NoteInfoEntry.COLUMN_COURSE_ID,
-                        NoteInfoEntry.COLUMN_NOTE_TITLE,
-                        NoteInfoEntry.COLUMN_NOTE_TEXT
-                };
-
-                return db.query(NoteInfoEntry.TABLE_NAME, noteColumns, selection,
-                        selectionArgs, null, null, null);
-            }
+        String[] noteColumns = {
+                        Notes.COLUMN_COURSE_ID,
+                        Notes.COLUMN_NOTE_TITLE,
+                        Notes.COLUMN_NOTE_TEXT
         };
+        mNoteUri = ContentUris.withAppendedId(Notes.CONTENT_URI, mNoteId);
+        return new CursorLoader(this, mNoteUri, noteColumns, null,null
+                , null);
+
     }
 
 
@@ -422,9 +402,9 @@ public class NoteActivity extends AppCompatActivity
 
     private void loadFinishedNotes(Cursor data) {
         mNoteCursor = data;
-        mCourseIdPos = mNoteCursor.getColumnIndex(NoteInfoEntry.COLUMN_COURSE_ID);
-        mNoteTitlePos = mNoteCursor.getColumnIndex(NoteInfoEntry.COLUMN_NOTE_TITLE);
-        mNoteTextPos = mNoteCursor.getColumnIndex(NoteInfoEntry.COLUMN_NOTE_TEXT);
+        mCourseIdPos = mNoteCursor.getColumnIndex(Notes.COLUMN_COURSE_ID);
+        mNoteTitlePos = mNoteCursor.getColumnIndex(Notes.COLUMN_NOTE_TITLE);
+        mNoteTextPos = mNoteCursor.getColumnIndex(Notes.COLUMN_NOTE_TEXT);
         mNoteCursor.moveToNext();
         mNotesQueryFinished = true;
         displayNoteWhenQueriesFinished();
