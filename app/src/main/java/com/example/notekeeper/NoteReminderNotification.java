@@ -1,6 +1,7 @@
 package com.example.notekeeper;
 
 import android.annotation.SuppressLint;
+import android.app.Application;
 import android.app.NotificationChannel;
 import android.app.NotificationManager;
 import android.app.PendingIntent;
@@ -18,53 +19,35 @@ import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.app.NotificationCompat;
 import androidx.core.app.NotificationManagerCompat;
 
-public class NoteReminderNotification extends AppCompatActivity {
-
-
-
+public class NoteReminderNotification extends Application {
+    public static final String CHANNEL_ID = "NOTE_REMINDER";
 
     @Override
-    protected void onCreate(@Nullable Bundle savedInstanceState) {
-        super.onCreate(savedInstanceState);
-        setContentView(R.layout.activity_note);
-        showNotification();
-
-        Button buttonShowReminder = findViewById(R.id.action_set_reminder);
-
-        buttonShowReminder.setOnClickListener(new OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                startActivity(new Intent(NoteReminderNotification.this, NoteActivity.class) );
-            }
-        });
+    public void onCreate() {
+        super.onCreate();
+        createNotificationChannelAndImportance();
     }
 
-
-
-
-    public void showNotification() {
-
-
-        NotificationManager NotificationManager =
-                (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
+    private void createNotificationChannelAndImportance() {
         if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.O) {
-            NotificationChannel channel = new NotificationChannel("SET_REMINDER",
-                    "NOTE_REMINDER",
-                    NotificationManager.IMPORTANCE_DEFAULT);
-            channel.setDescription("Notes notification reminder");
-            NotificationManager.createNotificationChannel(channel);
+            CharSequence name = getString(R.string.channel_name);
+            String description = getString(R.string.channel_description);
+
+            int importance = NotificationManager.IMPORTANCE_DEFAULT;
+            NotificationChannel channel = new NotificationChannel(CHANNEL_ID, name, importance);
+            channel.setDescription(description);
+
+            NotificationManager manager = getSystemService(NotificationManager.class);
+            manager.createNotificationChannel(channel);
+
+
         }
-
-        NotificationCompat.Builder builder = new NotificationCompat.Builder(this, "NoteReminder")
-                .setSmallIcon(R.drawable.ic_stat_note_reminder)
-                .setContentTitle("Note reminder")
-                .setContentText("This is a note reminder")
-                .setAutoCancel(true)
-                .setPriority(NotificationCompat.PRIORITY_DEFAULT);
-
-
     }
+}
 
 
-    }
+
+
+
+    
 

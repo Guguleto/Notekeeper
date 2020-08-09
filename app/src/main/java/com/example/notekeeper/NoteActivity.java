@@ -20,15 +20,20 @@ import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.appcompat.widget.Toolbar;
+import androidx.core.app.NotificationCompat;
+import androidx.core.app.NotificationManagerCompat;
 import androidx.loader.app.LoaderManager;
 import androidx.loader.content.Loader;
 
 import androidx.loader.content.CursorLoader;
+import androidx.core.app.NotificationCompat;
 
 import com.example.notekeeper.NoteKeeperDatabaseContract.CourseInfoEntry;
 import com.example.notekeeper.NoteKeeperDatabaseContract.NoteInfoEntry;
 import com.example.notekeeper.NoteKeeperProviderContract.Courses;
 import com.example.notekeeper.NoteKeeperProviderContract.Notes;
+
+
 
 
 public class NoteActivity extends AppCompatActivity
@@ -236,16 +241,37 @@ public class NoteActivity extends AppCompatActivity
         } else if (id == R.id.action_next) {
             moveNext();
         }else if (id == R.id.action_set_reminder){
-            new NoteReminderNotification();
+            showReminderNotification();
         }
 
         return super.onOptionsItemSelected(item);
     }
 
+    NotificationCompat.Builder getNotificationBuilder(int drawable, String contentTitle, String contentText, boolean
+            autoCancel, int priority) {
+        NotificationCompat.Builder builder = new NotificationCompat.Builder(this,
+                NoteReminderNotification.CHANNEL_ID);
+                builder.setSmallIcon(drawable)
+                .setContentTitle(contentTitle)
+                .setContentText(contentText)
+                .setAutoCancel(autoCancel)
+                .setPriority(priority);
+
+        return builder;
+    }
+
+
     private void showReminderNotification() {
+        NotificationCompat.Builder builder = getNotificationBuilder(R.drawable.ic_stat_note_reminder,
+                "Note Reminder", "This is a note reminder", true,
+                NotificationCompat.PRIORITY_DEFAULT);
 
+        notify(mNoteId,builder);
 
-
+    }
+    void notify(@SuppressWarnings("SameParameterValue") int id, NotificationCompat.Builder builder){
+        NotificationManagerCompat notificationManagerCompat = NotificationManagerCompat.from(this);
+        notificationManagerCompat.notify(id,builder.build());
     }
 
     @Override
@@ -426,4 +452,5 @@ public class NoteActivity extends AppCompatActivity
             mAdapterCourse.changeCursor(null);
         }
     }
+
 }
