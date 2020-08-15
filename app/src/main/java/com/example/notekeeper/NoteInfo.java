@@ -1,9 +1,11 @@
 package com.example.notekeeper;
 
+import android.content.Context;
 import android.os.Parcel;
 import android.os.Parcelable;
 
 public final class NoteInfo implements Parcelable{
+    public Context getNoteId;
     private CourseInfo mCourse;
     private String mTitle;
     private String mText;

@@ -1,18 +1,27 @@
 package com.example.notekeeper;
 
+import android.app.AlarmManager;
+import android.app.NotificationManager;
 import android.app.PendingIntent;
 import android.content.ContentUris;
 import android.content.ContentValues;
+import android.content.Context;
 import android.content.Intent;
+import android.content.res.Resources;
 import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
+import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
 import android.net.Uri;
 import android.os.AsyncTask;
 import android.os.Bundle;
+import android.os.SystemClock;
 import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
+import android.view.View;
 import android.widget.EditText;
+import android.widget.ProgressBar;
 import android.widget.SimpleCursorAdapter;
 import android.widget.Spinner;
 
@@ -32,8 +41,10 @@ import com.example.notekeeper.NoteKeeperDatabaseContract.CourseInfoEntry;
 import com.example.notekeeper.NoteKeeperDatabaseContract.NoteInfoEntry;
 import com.example.notekeeper.NoteKeeperProviderContract.Courses;
 import com.example.notekeeper.NoteKeeperProviderContract.Notes;
+import com.google.android.material.snackbar.Snackbar;
 
-
+import static android.os.Build.VERSION.SDK_INT;
+import static android.os.Build.VERSION_CODES.P;
 
 
 public class NoteActivity extends AppCompatActivity
@@ -176,6 +187,8 @@ public class NoteActivity extends AppCompatActivity
         mSpinnerCourses.setSelection(courseIndex);
         mTextNoteTitle.setText(noteTitle);
         mTextNoteText.setText(noteText);
+
+        CourseEventBroadcastHelper.sendEventBroadcast(this, courseId, "Editing note");
     }
 
     private int getIndexOfCourseId(String courseId) {
@@ -209,12 +222,65 @@ public class NoteActivity extends AppCompatActivity
     }
 
     private void createNewNote() {
+        AsyncTask<ContentValues, Integer, Uri> task = new AsyncTask<ContentValues, Integer, Uri>() {
+            private ProgressBar mProgressBar;
+
+            @Override
+            protected void onPreExecute() {
+                mProgressBar = (ProgressBar)findViewById(R.id.progress_bar);
+                mProgressBar.setVisibility(View.VISIBLE);
+                mProgressBar.setProgress(1);
+            }
+
+            @Override
+            protected Uri doInBackground(ContentValues... params){
+                Log.d(TAG, "doInBackground - thread: " + Thread.currentThread().getId());
+                ContentValues insertValues = params[0];
+                Uri rowUri =getContentResolver().insert(Notes.CONTENT_URI, insertValues);
+                simulateLongRunningWork(); // simulate slow database work
+                publishProgress(2);
+
+
+                simulateLongRunningWork();
+                publishProgress(3);
+                return rowUri;
+            }
+
+            @Override
+            protected void onProgressUpdate(Integer... values) {
+                int progressValue = values[0];
+                mProgressBar.setProgress(progressValue);
+            }
+
+            @Override
+            protected void onPostExecute(Uri uri) {
+                Log.d(TAG, "onPostExecute - thread: " + Thread.currentThread().getId());
+                mNoteUri = uri;
+                displaySnackBar(mNoteUri.toString());
+                mProgressBar.setVisibility(View.GONE);
+
+
+
+            }
+        };
         final ContentValues values = new ContentValues();
         values.put(Notes.COLUMN_COURSE_ID, "");
         values.put(Notes.COLUMN_NOTE_TITLE, "");
         values.put(Notes.COLUMN_NOTE_TEXT, "");
 
-        mNoteUri = getContentResolver().insert(Notes.CONTENT_URI, values);
+        Log.d(TAG, "Call to execute - thread: " + Thread.currentThread().getId());
+        task.execute(values);
+    }
+
+    private void simulateLongRunningWork() {
+        try {
+            Thread.sleep(2000);
+        }catch (Exception ex){}
+    }
+
+    private void displaySnackBar(String message){
+        View view = findViewById(R.id.spinner_course);
+        Snackbar.make(view,message,Snackbar.LENGTH_LONG).show();
     }
 
     @Override
@@ -247,37 +313,33 @@ public class NoteActivity extends AppCompatActivity
         return super.onOptionsItemSelected(item);
     }
 
-    NotificationCompat.Builder getNotificationBuilder(int drawable, String contentTitle, String contentText, boolean
-            autoCancel, int priority) {
-        NotificationCompat.Builder builder = new NotificationCompat.Builder(this,
-                NoteReminderNotification.CHANNEL_ID);
-                builder.setSmallIcon(drawable)
-                .setContentTitle(contentTitle)
-                .setContentText(contentText)
-                .setAutoCancel(autoCancel)
-                .setPriority(priority);
-
-        return builder;
-    }
-
-
     private void showReminderNotification() {
-        NotificationCompat.Builder builder = getNotificationBuilder(R.drawable.ic_stat_note_reminder,
-                "Note Reminder", "This is a note reminder", true,
-                NotificationCompat.PRIORITY_DEFAULT);
+        final String noteTitle = mTextNoteTitle.getText().toString();
+        final String noteText = mTextNoteText.getText().toString();
+        int noteId = (int)ContentUris.parseId(mNoteUri);
 
-        notify(mNoteId,builder);
+        Intent intent = new Intent(this, NoteReminderReceiver.class);
+        intent.putExtra(NoteReminderReceiver.EXTRA_NOTE_TITLE, noteTitle);
+        intent.putExtra(NoteReminderReceiver.EXTRA_NOTE_TEXT, noteText);
+        intent.putExtra(NoteReminderReceiver.EXTRA_NOTE_ID, noteId);
+
+        PendingIntent pendingIntent = PendingIntent.getBroadcast(this, 0, intent, PendingIntent.FLAG_UPDATE_CURRENT);
+
+        AlarmManager alarmManager = (AlarmManager) getSystemService(ALARM_SERVICE);
+
+        long currentTimeInMilliseconds = SystemClock.elapsedRealtime();
+        long ONE_HOUR = 60 * 60 * 1000;
+        long TEN_SECONDS = 10 * 1000;
+        long alarmTime = currentTimeInMilliseconds + TEN_SECONDS;
+        alarmManager.set(AlarmManager.ELAPSED_REALTIME, alarmTime, pendingIntent);
 
     }
-    void notify(@SuppressWarnings("SameParameterValue") int id, NotificationCompat.Builder builder){
-        NotificationManagerCompat notificationManagerCompat = NotificationManagerCompat.from(this);
-        notificationManagerCompat.notify(id,builder.build());
-    }
+
 
     @Override
-    public boolean onPrepareOptionsMenu(Menu menu) {
+       public boolean onPrepareOptionsMenu(Menu menu) {
         MenuItem item = menu.findItem(R.id.action_next);
-        int lastNoteIndex = DataManager.getInstance().getNotes().size() - 1;
+        int lastNoteIndex = DataManager.getInstance().getNotes().size() -1;
         item.setEnabled(mNoteId < lastNoteIndex);
 
         return super.onPrepareOptionsMenu(menu);
@@ -397,60 +459,58 @@ public class NoteActivity extends AppCompatActivity
                 Courses.COLUMN_COURSE_ID,
                 Courses._ID
         };
-        return new CursorLoader(this, uri, courseColumns, null, null
-                , Courses.COLUMN_COURSE_TITLE);
+        return new CursorLoader(this, uri, courseColumns, null, null, Courses.COLUMN_COURSE_TITLE);
     }
 
     private CursorLoader createLoaderNotes() {
         mNotesQueryFinished = false;
         String[] noteColumns = {
-                        Notes.COLUMN_COURSE_ID,
-                        Notes.COLUMN_NOTE_TITLE,
-                        Notes.COLUMN_NOTE_TEXT
+                Notes.COLUMN_COURSE_ID,
+                Notes.COLUMN_NOTE_TITLE,
+                Notes.COLUMN_NOTE_TEXT
         };
         mNoteUri = ContentUris.withAppendedId(Notes.CONTENT_URI, mNoteId);
-        return new CursorLoader(this, mNoteUri, noteColumns, null,null
-                , null);
+        return new CursorLoader(this, mNoteUri, noteColumns, null, null, null);
 
     }
-
 
     @Override
     public void onLoadFinished(@NonNull Loader<Cursor> loader, Cursor data) {
         if(loader.getId() == LOADER_NOTES)
             loadFinishedNotes(data);
-        else if(loader.getId() == LOADER_COURSES)
+        else if(loader.getId() == LOADER_COURSES) {
             mAdapterCourse.changeCursor(data);
             mCoursesQueryFinished = true;
             displayNoteWhenQueriesFinished();
-
+        }
     }
 
     private void loadFinishedNotes(Cursor data) {
         mNoteCursor = data;
-        mCourseIdPos = mNoteCursor.getColumnIndex(Notes.COLUMN_COURSE_ID);
-        mNoteTitlePos = mNoteCursor.getColumnIndex(Notes.COLUMN_NOTE_TITLE);
-        mNoteTextPos = mNoteCursor.getColumnIndex(Notes.COLUMN_NOTE_TEXT);
-        mNoteCursor.moveToNext();
+        mCourseIdPos = mNoteCursor.getColumnIndex(NoteInfoEntry.COLUMN_COURSE_ID);
+        mNoteTitlePos = mNoteCursor.getColumnIndex(NoteInfoEntry.COLUMN_NOTE_TITLE);
+        mNoteTextPos = mNoteCursor.getColumnIndex(NoteInfoEntry.COLUMN_NOTE_TEXT);
+
+        mNoteCursor.moveToFirst();
+
         mNotesQueryFinished = true;
         displayNoteWhenQueriesFinished();
 
     }
 
     private void displayNoteWhenQueriesFinished() {
-        if (mNotesQueryFinished && mCoursesQueryFinished)
+        if(mNotesQueryFinished && mCoursesQueryFinished)
             displayNote();
-    }
 
+    }
 
     @Override
     public void onLoaderReset(@NonNull Loader<Cursor> loader) {
-        if (loader.getId() == LOADER_NOTES){
-            if (mNoteCursor != null)
+        if(loader.getId() == LOADER_NOTES) {
+            if(mNoteCursor != null)
                 mNoteCursor.close();
-        }else if(loader.getId() == LOADER_COURSES){
+        } else if(loader.getId() == LOADER_COURSES) {
             mAdapterCourse.changeCursor(null);
         }
     }
-
 }
