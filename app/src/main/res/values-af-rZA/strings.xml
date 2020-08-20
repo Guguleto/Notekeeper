@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">Notekeeper</string>
+    <string name="title_activity_note">Wysig aantekening</string>
+    <string name="note_text_hint">Let op teks</string>
+    <string name="note_title_hint">Let op titel</string>
+</resources>

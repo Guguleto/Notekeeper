@@ -52,6 +52,7 @@ public class NoteActivity extends AppCompatActivity
     public static final int LOADER_NOTES = 0;
     public static final int LOADER_COURSES = 1;
     private final String TAG = getClass().getSimpleName();
+    public static final String NOTE_URI = "com.example.notekeeper.NOTE_URI";
     public static final String NOTE_ID = "com.example.notekeeper.NOTE_POSITION";
     public static final String ORIGINAL_NOTE_COURSE_ID = "com.example.notekeeper.ORIGINAL_NOTE_COURSE_ID";
     public static final String ORIGINAL_NOTE_TITLE = "com.example.notekeeper.ORIGINAL_NOTE_TITLE";
@@ -78,6 +79,7 @@ public class NoteActivity extends AppCompatActivity
     private boolean mCoursesQueryFinished;
     private boolean mNotesQueryFinished;
     private Uri mNoteUri;
+    private ModuleStatusView mViewModuleStatus;
 
 
     @Override
@@ -111,6 +113,8 @@ public class NoteActivity extends AppCompatActivity
             saveOriginalNoteValues();
         } else {
             restoreOriginalNoteValues(savedInstanceState);
+            String stringNoteUri = savedInstanceState.getString(NOTE_URI);
+            mNoteUri = Uri.parse(stringNoteUri);
         }
 
         mTextNoteTitle = (EditText) findViewById(R.id.text_note_title);
@@ -120,6 +124,21 @@ public class NoteActivity extends AppCompatActivity
             getSupportLoaderManager().initLoader(LOADER_NOTES, null,this);
 
         Log.d(TAG, "onCreate");
+
+        mViewModuleStatus = (ModuleStatusView) findViewById(R.id.module_status);
+        loadModuleStatusValues();
+    }
+
+    private void loadModuleStatusValues() {
+        //in real life we would lookup the selected courses module status from the content provider
+        int totalNumberOfModules = 11;
+        int completeNumberModules = 7;
+        boolean[] moduleStatus = new boolean[totalNumberOfModules];
+        for (int moduleIndex=0; moduleIndex < completeNumberModules; moduleIndex++)
+            moduleStatus[moduleIndex] = true;
+
+        mViewModuleStatus.setModuleStatus(moduleStatus);
+
     }
 
     private void loadCourseData() {
@@ -392,6 +411,8 @@ public class NoteActivity extends AppCompatActivity
         outState.putString(ORIGINAL_NOTE_COURSE_ID, mOriginalNoteCourseId);
         outState.putString(ORIGINAL_NOTE_TITLE, mOriginalNoteTitle);
         outState.putString(ORIGINAL_NOTE_TEXT, mOriginalNoteText);
+
+        outState.putString(NOTE_URI, mNoteUri.toString());
     }
 
     private void storePreviousNoteValues() {

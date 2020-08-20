@@ -179,35 +179,35 @@ public class SettingsActivity extends AppCompatActivity implements
 
 
         @Override
-            public boolean onOptionsItemSelected(@NonNull MenuItem item) {
-                int id = item.getItemId();
-                if (id == android.R.id.home) {
-                    startActivity(new Intent(getActivity(), SettingsActivity.class));
-                    return true;
-                }
-                return super.onOptionsItemSelected(item);
+        public boolean onOptionsItemSelected(@NonNull MenuItem item) {
+            int id = item.getItemId();
+            if (id == android.R.id.home) {
+                startActivity(new Intent(getActivity(), SettingsActivity.class));
+                return true;
             }
-        }
-
-        public static class NotificationsPreferenceFragment extends PreferenceFragmentCompat {
-
-            @Override
-            public void onCreatePreferences(Bundle savedInstanceState, String rootKey) {
-                setPreferencesFromResource(R.xml.notification_preferences, rootKey);
-                setHasOptionsMenu(true);
-            }
-
-            @Override
-            public boolean onOptionsItemSelected(@NonNull MenuItem item) {
-                int id = item.getItemId();
-                if (id == android.R.id.home) {
-                    startActivity(new Intent(getActivity(), SettingsActivity.class));
-                    return true;
-                }
-                return super.onOptionsItemSelected(item);
-            }
+            return super.onOptionsItemSelected(item);
         }
     }
+
+    public static class NotificationsPreferenceFragment extends PreferenceFragmentCompat {
+
+        @Override
+        public void onCreatePreferences(Bundle savedInstanceState, String rootKey) {
+            setPreferencesFromResource(R.xml.notification_preferences, rootKey);
+            setHasOptionsMenu(true);
+        }
+
+        @Override
+        public boolean onOptionsItemSelected(@NonNull MenuItem item) {
+            int id = item.getItemId();
+            if (id == android.R.id.home) {
+                startActivity(new Intent(getActivity(), SettingsActivity.class));
+                return true;
+            }
+            return super.onOptionsItemSelected(item);
+        }
+    }
+}
 
 
 
